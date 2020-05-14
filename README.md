@@ -1,2 +1,2 @@
 # Pincer
-A lightweight Lobste.rs reader
+A lightweight [Lobste.rs](lobste.rs) reader
