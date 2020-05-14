@@ -42,30 +42,26 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
   int _selectedIndex = 0;
 
   List<Widget> _widgetOptions = <Widget>[
-    ListView(
-      children: <Widget>[
-        Container(
-          height: 50,
-          color: Colors.amber[600],
-          child: const Center(child: Text('Entry A')),
-        ),
-        Container(
-          height: 50,
-          color: Colors.amber[500],
-          child: const Center(child: Text('Entry B')),
-        ),
-        Container(
-          height: 50,
-          color: Colors.amber[400],
-          child: const Center(child: Text('Entry C')),
-        ),
-      ],
+    ListView.builder(
+      itemBuilder: (BuildContext context, int index) {
+        return ListTile(
+          title: Text('News Story Number'),
+          subtitle: Text('This is a subtitle for the story number'),
+          trailing: Container(
+            child: Text('$index'),
+          ),
+          onTap: () {
+            // TODO onTap for ListView story selection
+          },
+          onLongPress: () {
+            // TODO onLongPress for ListView story selection
+          },
+        );
+      },
     ),
     Text('Latest'),
     ListView(
-      children: <Widget>[
-        Text('Settings')
-      ],
+      children: <Widget>[Text('Settings')],
     ),
   ];
 
@@ -97,17 +93,16 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_pageTitle),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: () {
+              // TODO onPressed for AppBar refresh button
+            },
+          )
+        ],
       ),
-      body: Center(
-        child: _widgetOptions.elementAt(_selectedIndex),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // onPressed code goes here
-        },
-        child: Icon(Icons.search),
-        backgroundColor: themeColour,
-      ),
+      body: _widgetOptions.elementAt(_selectedIndex),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
@@ -130,6 +125,10 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
   }
 }
 
-//body: Center(
-//child: _widgetOptions.elementAt(_selectedIndex),
-//),
+//      floatingActionButton: FloatingActionButton(
+//        onPressed: () {
+//          // onPressed code goes here
+//        },
+//        child: Icon(Icons.search),
+//        backgroundColor: themeColour,
+//      ),
