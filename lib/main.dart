@@ -61,7 +61,17 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
     ),
     Text('Latest'),
     ListView(
-      children: <Widget>[Text('Settings')],
+      children: <Widget>[
+        Container (
+          child: ListTile(
+            title: Text('Hello'),
+            trailing: Checkbox(onChanged: (value) {
+              // TODO Settings checkbox
+              value = true;
+            }, value: false,),
+          ),
+        )
+      ],
     ),
   ];
 
