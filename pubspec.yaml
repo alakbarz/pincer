@@ -23,6 +23,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  http:
+  url_launcher: ^3.0.3
 
 
   # The following adds the Cupertino Icons font to your application.
