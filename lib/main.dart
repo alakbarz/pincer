@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 void main() => runApp(MyApp());
 
@@ -17,97 +17,35 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = ThemeData.from(
+        colorScheme: ColorScheme.dark(
+            primary: themeColour,
+            secondary: accentColour,
+            tertiary: accentColour));
     return MaterialApp(
-      theme: ThemeData(
-        brightness: Brightness.light,
-        primaryColor: themeColour,
-        accentColor: accentColour,
-      ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        primaryColor: themeColour,
-        accentColor: accentColour,
-      ),
+      theme: theme,
+      darkTheme: theme,
       title: _title,
-      home: MyStatefulWidget(),
+      home: PincerStatefulWidget(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class MyStatefulWidget extends StatefulWidget {
-  MyStatefulWidget({Key key}) : super(key: key);
+class PincerStatefulWidget extends StatefulWidget {
+  PincerStatefulWidget({Key key}) : super(key: key);
 
   @override
-  MyStatefulWidgetState createState() => MyStatefulWidgetState();
+  PincerStatefulWidgetState createState() => PincerStatefulWidgetState();
 }
 
-class MyStatefulWidgetState extends State<MyStatefulWidget> {
+class PincerStatefulWidgetState extends State<PincerStatefulWidget> {
   int _selectedIndex = 0;
 
   List<Widget> _widgetOptions = <Widget>[
-    ListView(
-      children: <Widget>[
-        new FutureBuilder<List<Newest>>(
-            future: fetchHottest(),
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                List<Newest> posts = snapshot.data;
-                return new Column(
-                    children: posts
-                        .map((post) => new ListTile(
-                            onTap: () async {
-                              if (await canLaunch(post.url.toString())) {
-                                await launch(post.url.toString());
-                              }
-                            },
-                            title: Text(post.title),
-                            subtitle: Text(post.submitterUser.username +
-                                ' · ' +
-                                cutDomain(post.url) +
-                                ' · ▲' +
-                                post.upvotes.toString())))
-                        .toList());
-              } else if (snapshot.hasError) {
-                return snapshot.error;
-              }
-
-              return LinearProgressIndicator();
-            })
-      ],
-    ),
-
-    // Latest
-    ListView(
-      children: <Widget>[
-        new FutureBuilder<List<Newest>>(
-            future: fetchNewest(),
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                List<Newest> posts = snapshot.data;
-                return new Column(
-                    children: posts
-                        .map((post) => new ListTile(
-                            onTap: () async {
-                              if (await canLaunch(post.url.toString())) {
-                                await launch(post.url.toString());
-                              }
-                            },
-                            title: Text(post.title),
-                            subtitle: Text(post.submitterUser.username +
-                                ' · ' +
-                                cutDomain(post.url) +
-                                ' · ▲' +
-                                post.upvotes.toString())))
-                        .toList());
-              } else if (snapshot.hasError) {
-                return snapshot.error;
-              }
-
-              return LinearProgressIndicator();
-            })
-      ],
-    ),
+    buildLobstersList(FetchType.Hottest),
+    buildLobstersList(FetchType.Newest),
+    buildLobstersList(FetchType.Active),
 
     //Settings
     ListView(
@@ -149,6 +87,11 @@ class MyStatefulWidgetState extends State<MyStatefulWidget> {
           break;
         case 2:
           {
+            _pageTitle = 'Active';
+          }
+          break;
+        case 3:
+          {
             _pageTitle = 'Settings';
           }
           break;
@@ -156,85 +99,135 @@ class MyStatefulWidgetState extends State<MyStatefulWidget> {
     });
   }
 
-  // Extracts the top level domain from a URL
-  static String cutDomain(String url) {
-    RegExp exp =
-        new RegExp(r'^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n\?\=]+)');
-
-    RegExpMatch match = exp.firstMatch(url);
-
-    if (match == null){
-      return 'Discussion Thread';
-    }
-
-    return match.group(1);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_pageTitle),
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: () {
-              // TODO onPressed for AppBar refresh button
-            },
-          )
-        ],
-      ),
-      body: _widgetOptions.elementAt(_selectedIndex),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.trending_up),
-            title: Text('Trending'),
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.access_time),
-            title: Text('Latest'),
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            title: Text('Settings'),
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-      ),
-    );
+        appBar: AppBar(
+          title: Text(_pageTitle),
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.refresh),
+              onPressed: () {
+                // TODO onPressed for AppBar refresh button
+              },
+            )
+          ],
+        ),
+        body: _widgetOptions.elementAt(_selectedIndex),
+        bottomNavigationBar: BottomNavigationBar(
+          selectedIconTheme: IconThemeData(color: accentColour),
+          unselectedIconTheme: IconThemeData(color: accentColour),
+          unselectedLabelStyle: TextStyle(color: themeColour),
+          selectedLabelStyle: TextStyle(color: themeColour),
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+              icon: Icon(Icons.trending_up),
+              label: 'Trending',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.access_time),
+              label: 'Latest',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.arrow_upward_sharp),
+              label: 'Active',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings),
+              label: 'Settings',
+            ),
+          ],
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+        ));
   }
 }
 
-Future<List<Newest>> fetchNewest() async {
-  final response = await http.get('https://lobste.rs/newest.json');
-  var responseJson = json.decode(response.body);
-
-  if (response.statusCode == 200) {
-    // If the server did return a 200 OK response,
-    // then parse the JSON.
-//    return Newest.fromJson(json.decode(response.body));
-    return (responseJson as List).map((e) => Newest.fromJson(e)).toList();
-  } else {
-    // If the server did not return a 200 OK response,
-    // then throw an exception.
-    throw Exception('Failed to load newest stories');
+// Extracts the top level domain from a URL
+String cutDomain(String url) {
+  try {
+    var uri = Uri.parse(url);
+    if (uri.host == "") {
+      return 'Discussion Thread';
+    }
+    return uri.host;
+  } on FormatException {
+    return "Unknown";
   }
 }
 
-Future<List<Newest>> fetchHottest() async {
-  final response = await http.get('https://lobste.rs/hottest.json');
+ListView buildLobstersList(FetchType type) {
+  return ListView(
+    children: <Widget>[
+      new FutureBuilder<List<Newest>>(
+          future: fetchLobsters(type),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return LinearProgressIndicator();
+            } else if (snapshot.hasError) {
+              return snapshot.error;
+            }
+
+            List<Newest> posts = snapshot.data;
+            return new Column(
+                children: posts
+                    .map((post) => new ListTile(
+                          onTap: () async {
+                            if (post.url == "") {
+                              await launchUrlString(post.commentsUrl);
+                            } else {
+                              await launchUrlString(post.url);
+                            }
+                          },
+                          title: Text(post.title),
+                          subtitle: Text(post.submitterUser.username +
+                              ' · ' +
+                              cutDomain(post.url) +
+                              ' · ▲' +
+                              post.score.toString()),
+                          trailing: IconButton(
+                              icon: Column(children: [
+                                Icon(Icons.comment, size: 20),
+                                Text(post.commentCount.toString(),
+                                    style: TextStyle(fontSize: 8))
+                              ]),
+                              padding: EdgeInsets.all(2),
+                              onPressed: (() async {
+                                await launchUrlString(post.commentsUrl);
+                              })),
+                        ))
+                    .toList());
+          })
+    ],
+  );
+}
+
+enum FetchType {
+  Hottest,
+  Newest,
+  Active,
+}
+
+Future<List<Newest>> fetchLobsters(FetchType type) async {
+  String file;
+  switch (type) {
+    case FetchType.Hottest:
+      file = "hottest.json";
+      break;
+    case FetchType.Newest:
+      file = "newest.json";
+      break;
+    case FetchType.Active:
+      file = "active.json";
+      break;
+  }
+  var uri = Uri.https("lobste.rs", file);
+  final response = await http.get(uri);
   var responseJson = json.decode(response.body);
 
   if (response.statusCode == 200) {
-    // If the server did return a 200 OK response,
-    // then parse the JSON.
-//    return Newest.fromJson(json.decode(response.body));
     return (responseJson as List).map((e) => Newest.fromJson(e)).toList();
   } else {
-    // If the server did not return a 200 OK response,
-    // then throw an exception.
     throw Exception('Failed to load newest stories');
   }
 }
